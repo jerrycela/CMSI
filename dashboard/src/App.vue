@@ -5,6 +5,7 @@ import OverviewTab from './components/OverviewTab.vue'
 import ProjectsTab from './components/ProjectsTab.vue'
 import SkillsTab from './components/SkillsTab.vue'
 import DocsTab from './components/DocsTab.vue'
+import CronHistoryTab from './components/CronHistoryTab.vue'
 
 const data = ref<DashboardData | null>(null)
 const error = ref<string | null>(null)
@@ -15,6 +16,7 @@ const tabs = [
   { key: 'projects', label: '指令設定' },
   { key: 'skills', label: 'Skills' },
   { key: 'docs', label: '參考文件' },
+  { key: 'cron', label: '執行記錄' },
 ]
 
 onMounted(async () => {
@@ -55,5 +57,6 @@ onMounted(async () => {
     <ProjectsTab v-else-if="activeTab === 'projects'" :data="data" />
     <SkillsTab v-else-if="activeTab === 'skills'" :data="data" />
     <DocsTab v-else-if="activeTab === 'docs'" :data="data" />
+    <CronHistoryTab v-else-if="activeTab === 'cron'" :data="data" />
   </template>
 </template>

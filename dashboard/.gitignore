@@ -38,5 +38,8 @@ __screenshots__/
 # Vite
 *.timestamp-*-*.mjs
 
+# Environment variables (API keys)
+.env
+
 # Generated scan data (contains local paths, not for version control)
 public/data.json

@@ -1,3 +1,33 @@
+export interface CronProjectStats {
+  name: string
+  sessions: number
+  userMessages: number
+  toolUses: number
+  topTools: { name: string; count: number }[]
+  repeatedReminders: number
+  errors: number
+}
+
+export interface CronRun {
+  folderName: string               // "20260219-030001"
+  timestamp: string                // ISO time from dir name
+  runType: 'scheduled' | 'manual'  // 03:00 = scheduled, else = manual
+  status: 'success' | 'partial' | 'failed'
+  failReason?: string
+  projects: CronProjectStats[]
+  globalStats: {
+    projectCount: number
+    totalSessions: number
+    totalToolUses: number
+  } | null
+  insight?: string
+}
+
+export interface CronHistoryData {
+  runs: CronRun[]
+  totalRuns: number
+}
+
 export interface DashboardData {
   meta: Meta
   healthThresholds: HealthThresholds
@@ -6,6 +36,7 @@ export interface DashboardData {
   skills: SkillsData
   allProjects: ProjectConfig[]
   tokenBudget: TokenBudget
+  cronHistory: CronHistoryData
 }
 
 export interface Meta {

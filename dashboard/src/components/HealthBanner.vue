@@ -79,7 +79,7 @@ const statusColor = computed(() => {
 const copied = ref(false)
 function copyScanCommand() {
   navigator.clipboard.writeText(
-    'cd "/Users/admin/Documents/Claude md 自我迭代專案/dashboard" && npm run scan'
+    'cd "/Users/admin/_dev-tools/claude-code/Claude md 自我迭代專案/dashboard" && npm run scan'
   )
   copied.value = true
   setTimeout(() => (copied.value = false), 3000)

@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import Anthropic from '@anthropic-ai/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +21,7 @@ const SKILLS_MANUAL_DIR = '/Users/admin/.claude/skills';
 const SKILLS_PLUGIN_BASE = '/Users/admin/.claude/plugins/marketplaces';
 const GLOBAL_CLAUDE_MD = '/Users/admin/.claude/CLAUDE.md';
 const DOCS_DIR = '/Users/admin/.claude/docs';
+const CRON_LOGS_DIR = '/Users/admin/_dev-tools/claude-code/claude-md-auto-update-logs';
 
 // Output path
 const OUTPUT_PATH = path.join(__dirname, 'public', 'data.json');
@@ -511,6 +514,273 @@ function printSummary(data) {
 }
 
 /**
+ * Remove ANSI color/escape codes from a string
+ */
+function stripAnsi(str) {
+  return str.replace(/\x1B\[[0-9;]*m/g, '');
+}
+
+/**
+ * Generate AI insight for a cron run using Claude Haiku
+ */
+async function generateInsight(run) {
+  // Skip failed runs or runs with no projects
+  if (run.status === 'failed' || !run.projects || run.projects.length === 0) {
+    return null;
+  }
+
+  try {
+    const client = new Anthropic();
+
+    const projectsSummary = run.projects.map(p =>
+      `- ${p.name}: ${p.sessions} sessions, ${p.userMessages} 訊息, ${p.toolUses} 工具調用, ${p.repeatedReminders} 重複提醒, ${p.errors} 錯誤`
+    ).join('\n');
+
+    const globalSummary = run.globalStats
+      ? `分析專案數：${run.globalStats.projectCount}, 總 Sessions：${run.globalStats.totalSessions}, 總工具調用：${run.globalStats.totalToolUses}`
+      : '無全域統計';
+
+    const prompt = `你是一位 DevOps 分析師。以下是一次 Claude Code 自動分析的執行結果。
+請用繁體中文寫 2-3 句洞察，指出最值得注意的發現和建議。
+不要重複數據本身，要給出解讀和可操作建議。
+
+執行時間：${run.timestamp}
+狀態：${run.status}
+
+各專案統計：
+${projectsSummary}
+
+全域統計：
+${globalSummary}`;
+
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return message.content[0].text;
+  } catch (err) {
+    console.warn(`[generateInsight] API call failed for run ${run.folderName}: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * Convert dir name like "20260219-030001" to ISO 8601 string with +08:00 offset
+ */
+function parseDateFromDirName(dirName) {
+  const year = dirName.slice(0, 4);
+  const month = dirName.slice(4, 6);
+  const day = dirName.slice(6, 8);
+  const hour = dirName.slice(9, 11);
+  const minute = dirName.slice(11, 13);
+  const second = dirName.slice(13, 15);
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}+08:00`;
+}
+
+/**
+ * Classify run type based on hour: 03 = scheduled, otherwise manual
+ */
+function classifyRunType(hour) {
+  return hour === 3 ? 'scheduled' : 'manual';
+}
+
+/**
+ * Detect run status from directory contents:
+ * - summary.log exists AND contains "## 全域統計" → 'success'
+ * - summary.log exists but no "## 全域統計" → 'success' (v2 partial / v1)
+ * - no summary.log, main.log first line has ❌ → 'failed' with failReason
+ * - no summary.log, main.log has more than 1 line → 'partial'
+ */
+function detectRunStatus(dirPath) {
+  const summaryPath = path.join(dirPath, 'summary.log');
+  const mainPath = path.join(dirPath, 'main.log');
+
+  if (fs.existsSync(summaryPath)) {
+    return { status: 'success' };
+  }
+
+  if (fs.existsSync(mainPath)) {
+    try {
+      const raw = fs.readFileSync(mainPath, 'utf8');
+      const lines = raw.split('\n').filter(l => l.trim().length > 0);
+      const firstLine = stripAnsi(lines[0] || '');
+
+      if (lines.length <= 1 && firstLine.includes('❌')) {
+        const failReason = firstLine.replace(/❌\s*/, '').trim();
+        return { status: 'failed', failReason };
+      }
+
+      return { status: 'partial' };
+    } catch (err) {
+      console.warn(`[detectRunStatus] Cannot read main.log in ${dirPath}: ${err.message}`);
+      return { status: 'partial' };
+    }
+  }
+
+  return { status: 'partial' };
+}
+
+/**
+ * Parse v2 format summary.log into projects array and globalStats
+ */
+function parseSummaryV2(content) {
+  const projects = [];
+  let globalStats = null;
+
+  // Split into sections by "### " headings
+  const parts = content.split(/(?=^### )/m);
+
+  for (const block of parts) {
+    const nameMatch = block.match(/^### (.+)$/m);
+    if (!nameMatch) continue;
+
+    const projectName = nameMatch[1].trim();
+
+    // sessions and userMessages
+    let sessions = 0;
+    let userMessages = 0;
+    const sessionsMatch = block.match(/\*\*Sessions\*\*[：:]\s*(\d+)\s+sessions[,，]\s*(\d+)\s+total user messages/);
+    if (sessionsMatch) {
+      sessions = parseInt(sessionsMatch[1], 10);
+      userMessages = parseInt(sessionsMatch[2], 10);
+    }
+
+    // toolUses
+    let toolUses = 0;
+    const toolUsesMatch = block.match(/\*\*工具使用\*\*[：:]\s*(\d+)\s+total tool uses/);
+    if (toolUsesMatch) {
+      toolUses = parseInt(toolUsesMatch[1], 10);
+    }
+
+    // topTools — find the "Top 5 工具" section and parse lines like "- ToolName: 123"
+    const topTools = [];
+    const topToolsSection = block.match(/\*\*Top 5 工具\*\*[：:]?\s*\n([\s\S]*?)(?:\n\*\*|\n---|\n##|$)/);
+    if (topToolsSection) {
+      const toolLines = topToolsSection[1].split('\n');
+      for (const line of toolLines) {
+        const toolMatch = line.trim().match(/^- (.+?):\s*(\d+)$/);
+        if (toolMatch) {
+          topTools.push({ name: toolMatch[1].trim(), count: parseInt(toolMatch[2], 10) });
+        }
+      }
+    }
+
+    // repeatedReminders
+    let repeatedReminders = 0;
+    const remindersMatch = block.match(/\*\*重複提醒\*\*[：:]\s*發現\s*(\d+)\s*條/);
+    if (remindersMatch) {
+      repeatedReminders = parseInt(remindersMatch[1], 10);
+    }
+
+    // errors
+    let errors = 0;
+    const errorsMatch = block.match(/\*\*錯誤記錄\*\*[：:]\s*發現\s*(\d+)\s*條/);
+    if (errorsMatch) {
+      errors = parseInt(errorsMatch[1], 10);
+    }
+
+    projects.push({ name: projectName, sessions, userMessages, toolUses, topTools, repeatedReminders, errors });
+  }
+
+  // Parse "## 全域統計" section — this section is always last, so grab everything after it
+  const globalSectionIdx = content.indexOf('## 全域統計');
+  if (globalSectionIdx !== -1) {
+    const globalText = content.slice(globalSectionIdx);
+
+    const projectCountMatch = globalText.match(/分析專案數[：:]\s*(\d+)/);
+    const totalSessionsMatch = globalText.match(/總\s*Sessions\s*數[：:]\s*(\d+)/);
+    const totalToolUsesMatch = globalText.match(/總工具調用數[：:]\s*(\d+)/);
+
+    if (projectCountMatch && totalSessionsMatch && totalToolUsesMatch) {
+      globalStats = {
+        projectCount: parseInt(projectCountMatch[1], 10),
+        totalSessions: parseInt(totalSessionsMatch[1], 10),
+        totalToolUses: parseInt(totalToolUsesMatch[1], 10)
+      };
+    }
+  }
+
+  return { projects, globalStats };
+}
+
+/**
+ * Scan cron history from CRON_LOGS_DIR
+ */
+function scanCronHistory() {
+  const runs = [];
+
+  try {
+    const entries = fs.readdirSync(CRON_LOGS_DIR);
+    const dirNames = entries.filter(e => /^\d{8}-\d{6}$/.test(e));
+
+    for (const dirName of dirNames) {
+      try {
+        const dirPath = path.join(CRON_LOGS_DIR, dirName);
+
+        // Only process directories
+        const stat = fs.statSync(dirPath);
+        if (!stat.isDirectory()) continue;
+
+        // Parse timestamp and runType from directory name
+        const timestamp = parseDateFromDirName(dirName);
+        const hour = parseInt(dirName.slice(9, 11), 10);
+        const runType = classifyRunType(hour);
+
+        // Detect status
+        const { status, failReason } = detectRunStatus(dirPath);
+
+        // Parse projects and globalStats
+        let projects = [];
+        let globalStats = null;
+
+        const summaryPath = path.join(dirPath, 'summary.log');
+        if (fs.existsSync(summaryPath) && status !== 'failed') {
+          try {
+            const content = fs.readFileSync(summaryPath, 'utf8');
+            const isV2 = content.includes('## 各專案分析摘要');
+
+            if (isV2) {
+              const parsed = parseSummaryV2(content);
+              projects = parsed.projects;
+              globalStats = parsed.globalStats;
+            }
+            // v1 format: leave projects = [] and globalStats = null
+          } catch (err) {
+            console.warn(`[scanCronHistory] Cannot parse summary.log in ${dirPath}: ${err.message}`);
+          }
+        }
+
+        const run = {
+          folderName: dirName,
+          timestamp,
+          runType,
+          status,
+          projects,
+          globalStats
+        };
+
+        if (failReason !== undefined) {
+          run.failReason = failReason;
+        }
+
+        runs.push(run);
+      } catch (err) {
+        console.warn(`[scanCronHistory] Cannot process dir ${dirName}: ${err.message}`);
+      }
+    }
+  } catch (err) {
+    console.warn(`[scanCronHistory] Cannot read CRON_LOGS_DIR: ${err.message}`);
+  }
+
+  // Sort newest first
+  runs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  return { runs, totalRuns: runs.length };
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -577,6 +847,47 @@ async function main() {
     lastManualUpdate: null
   };
 
+  const cronHistory = scanCronHistory();
+
+  // Generate AI insights for cron runs
+  const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+  if (!hasApiKey) {
+    console.warn('[insight] ANTHROPIC_API_KEY 未設定，跳過 AI insight 生成');
+  }
+
+  if (hasApiKey) {
+    // Load existing insights from data.json cache
+    let cachedInsights = {};
+    try {
+      if (fs.existsSync(OUTPUT_PATH)) {
+        const existingData = JSON.parse(fs.readFileSync(OUTPUT_PATH, 'utf8'));
+        if (existingData.cronHistory && existingData.cronHistory.runs) {
+          for (const run of existingData.cronHistory.runs) {
+            if (run.insight) {
+              cachedInsights[run.folderName] = run.insight;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`[insight] Cannot read cached insights: ${err.message}`);
+    }
+
+    // Generate insights for runs that don't have one yet
+    for (const run of cronHistory.runs) {
+      if (cachedInsights[run.folderName]) {
+        run.insight = cachedInsights[run.folderName];
+        continue;
+      }
+
+      const insight = await generateInsight(run);
+      if (insight) {
+        run.insight = insight;
+        console.log(`[insight] Generated for ${run.folderName}`);
+      }
+    }
+  }
+
   const data = {
     meta: {
       generatedAt: new Date().toISOString(),
@@ -587,7 +898,8 @@ async function main() {
     docs,
     skills,
     allProjects,
-    tokenBudget: existingTokenBudget || defaultTokenBudget
+    tokenBudget: existingTokenBudget || defaultTokenBudget,
+    cronHistory
   };
 
   // 5. Write output
