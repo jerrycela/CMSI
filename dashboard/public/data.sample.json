@@ -1,0 +1,308 @@
+{
+  "meta": {
+    "generatedAt": "2026-02-19T12:30:00.000Z",
+    "scanVersion": "1.0.0"
+  },
+  "healthThresholds": {
+    "_note": "健康狀態判定閾值",
+    "globalWordCountWarning": 6000,
+    "globalWordCountAlert": 8000,
+    "totalWordCountWarning": 32000,
+    "totalWordCountAlert": 40000,
+    "dataStaleHoursWarning": 24,
+    "dataStaleHoursAlert": 72
+  },
+  "globalConfig": {
+    "claudeMdPath": "/Users/admin/.claude/CLAUDE.md",
+    "wordCount": 563,
+    "byteSize": 6875,
+    "estimatedTokens": 732,
+    "content": "# Claude Code 全域指令\n\n## 語言與報告\n\n**一律使用繁體中文與使用者對答。** 程式碼註解可用英文。誠實作答，禁 emoji（除非用戶要求）。\n\n**報告規範**（用戶為非工程師背景）：\n- 禁用技術術語 — 翻譯為日常用語\n- 使用生活化比喻解釋技術問題\n- 按業務影響分類、問題/修復格式、統計表格\n- 避免程式碼片段（除非用戶要求）\n\n## 開發哲學\n\n- **漸進式進步優於大爆炸** — 小變更，每次都能編譯和通過測試\n- **先學習再動手** — 找 3 個類似功能/元件，理解模式後再實作\n- **務實優於教條** — 適應專案實際情況，而非死守理論\n- **清晰意圖優於巧妙程式碼** — 選擇無聊但顯而易見的解法\n- **只做被要求的事**，不要「順便改善」\n\n## 迭代定義（CRITICAL）\n\n當用戶要求「迭代 N 次」時，嚴格遵循以下定義：\n\n- **第 1 次迭代**：完整從頭到尾做完整份成果\n- **第 2 次迭代**：從頭到尾檢視第 1 輪成果，分析優劣好壞，給出 insight",
+    "isTruncated": true,
+    "totalWordCount": 1872,
+    "sections": [
+      { "heading": "語言與報告", "wordCount": 14 },
+      { "heading": "開發哲學", "wordCount": 20 },
+      { "heading": "迭代定義（CRITICAL）", "wordCount": 29 },
+      { "heading": "模型分工原則（CRITICAL）", "wordCount": 51 },
+      { "heading": "核心品質規則", "wordCount": 16 },
+      { "heading": "實作流程", "wordCount": 12 },
+      { "heading": "卡關處理（CRITICAL: 3 次嘗試上限）", "wordCount": 15 },
+      { "heading": "工具使用", "wordCount": 5 },
+      { "heading": "品質關卡（Definition of Done）", "wordCount": 29 },
+      { "heading": "NEVER / ALWAYS", "wordCount": 4 },
+      { "heading": "外部系統整合", "wordCount": 18 },
+      { "heading": "Skill 路由表", "wordCount": 229 },
+      { "heading": "條件式參考手冊（Docs 路由表）", "wordCount": 76 },
+      { "heading": "專案設定", "wordCount": 5 }
+    ]
+  },
+  "docs": {
+    "totalWordCount": 1309,
+    "totalEstimatedTokens": 1702,
+    "files": [
+      {
+        "path": "/Users/admin/.claude/docs/agents.md",
+        "name": "agents.md",
+        "wordCount": 202,
+        "byteSize": 2233,
+        "estimatedTokens": 263,
+        "descriptionSnippet": "Agent Orchestration — 模型角色分配（CRITICAL）：定義 Opus/Sonnet/Haiku 的使用場景與 subagent 協作模式。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/coding-style.md",
+        "name": "coding-style.md",
+        "wordCount": 152,
+        "byteSize": 1337,
+        "estimatedTokens": 198,
+        "descriptionSnippet": "Coding Style — 不可變性、錯誤處理、API response 格式、TypeScript 慣例等程式碼風格規範。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/git-workflow.md",
+        "name": "git-workflow.md",
+        "wordCount": 107,
+        "byteSize": 1152,
+        "estimatedTokens": 139,
+        "descriptionSnippet": "Git Workflow — commit 訊息格式、分支命名、PR 流程等 Git 操作規範。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/hooks.md",
+        "name": "hooks.md",
+        "wordCount": 195,
+        "byteSize": 1396,
+        "estimatedTokens": 254,
+        "descriptionSnippet": "Hooks System — PreToolUse / PostToolUse / Notification 等 hook 類型與配置方式。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/integrations.md",
+        "name": "integrations.md",
+        "wordCount": 119,
+        "byteSize": 1954,
+        "estimatedTokens": 155,
+        "descriptionSnippet": "外部系統整合 — Slack 推送至 n8n-測試頻道、Heptabase 筆記儲存的詳細規則。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/patterns.md",
+        "name": "patterns.md",
+        "wordCount": 138,
+        "byteSize": 1156,
+        "estimatedTokens": 179,
+        "descriptionSnippet": "Common Patterns — API Response Format、Repository Pattern、Factory Pattern 等設計模式範例。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/performance.md",
+        "name": "performance.md",
+        "wordCount": 120,
+        "byteSize": 1193,
+        "estimatedTokens": 156,
+        "descriptionSnippet": "Performance Optimization — 模型選擇策略（Haiku/Sonnet/Opus）與執行效能優化技巧。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/planning.md",
+        "name": "planning.md",
+        "wordCount": 95,
+        "byteSize": 1417,
+        "estimatedTokens": 124,
+        "descriptionSnippet": "規劃與分階段 — planning-with-files 使用方式、複雜任務拆解流程與決策評估框架。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/security.md",
+        "name": "security.md",
+        "wordCount": 100,
+        "byteSize": 898,
+        "estimatedTokens": 130,
+        "descriptionSnippet": "Security Guidelines — commit 前必要安全檢查：無硬編碼 API key、無敏感資訊洩漏等。"
+      },
+      {
+        "path": "/Users/admin/.claude/docs/testing.md",
+        "name": "testing.md",
+        "wordCount": 81,
+        "byteSize": 1073,
+        "estimatedTokens": 105,
+        "descriptionSnippet": "Testing Requirements — 最低 80% 覆蓋率、單元/整合/E2E 測試類型與 TDD 流程規範。"
+      }
+    ]
+  },
+  "skills": {
+    "totalCount": 68,
+    "manualCount": 25,
+    "pluginCount": 43,
+    "files": [
+      {
+        "name": "fetch-slack-messages",
+        "path": "/Users/admin/.claude/skills/fetch-slack-messages.md",
+        "source": "manual",
+        "type": "file",
+        "wordCount": 879,
+        "byteSize": 8831,
+        "descriptionSnippet": "批次抓取多個 Slack 頻道的訊息（含串內回覆）並彙整成 Markdown 文件。"
+      },
+      {
+        "name": "weekly-report-auto",
+        "path": "/Users/admin/.claude/skills/weekly-report-auto.md",
+        "source": "manual",
+        "type": "file",
+        "wordCount": 1483,
+        "byteSize": 16315,
+        "descriptionSnippet": "自動週會報告生成器 - 從 Slack 抓取原始訊息並彙整為標準格式週會報告。"
+      },
+      {
+        "name": "excalidraw-mcp",
+        "path": "/Users/admin/.claude/skills/excalidraw-mcp/SKILL.md",
+        "source": "manual",
+        "type": "directory",
+        "wordCount": 410,
+        "byteSize": 3121,
+        "descriptionSnippet": "Create, edit, and export live Excalidraw diagrams using mcp-excalidraw-server (MCP tools + canvas REST API)."
+      },
+      {
+        "name": "algorithmic-art",
+        "path": "/Users/admin/.claude/skills/algorithmic-art",
+        "source": "manual",
+        "type": "symlink",
+        "wordCount": null,
+        "byteSize": null,
+        "descriptionSnippet": "生成式演算藝術創作技巧，適用於 canvas / WebGL 視覺效果。"
+      },
+      {
+        "name": "vue-best-practices",
+        "path": "/Users/admin/.claude/skills/vue-best-practices",
+        "source": "manual",
+        "type": "symlink",
+        "wordCount": null,
+        "byteSize": null,
+        "descriptionSnippet": "Vue.js 最佳實踐，涵蓋 Composition API、元件設計與效能優化。"
+      },
+      {
+        "name": "brainstorming",
+        "path": "/Users/admin/.claude/plugins/marketplaces/superpowers-dev/skills/brainstorming/SKILL.md",
+        "source": "plugin:superpowers-dev",
+        "type": "file",
+        "wordCount": 364,
+        "byteSize": 2505,
+        "descriptionSnippet": "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
+      },
+      {
+        "name": "test-driven-development",
+        "path": "/Users/admin/.claude/plugins/marketplaces/superpowers-dev/skills/test-driven-development/SKILL.md",
+        "source": "plugin:superpowers-dev",
+        "type": "file",
+        "wordCount": 1496,
+        "byteSize": null,
+        "descriptionSnippet": "Use when implementing any feature or bugfix, before writing implementation code."
+      },
+      {
+        "name": "systematic-debugging",
+        "path": "/Users/admin/.claude/plugins/marketplaces/superpowers-dev/skills/systematic-debugging/SKILL.md",
+        "source": "plugin:superpowers-dev",
+        "type": "file",
+        "wordCount": 1504,
+        "byteSize": null,
+        "descriptionSnippet": "Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes."
+      },
+      {
+        "name": "dispatching-parallel-agents",
+        "path": "/Users/admin/.claude/plugins/marketplaces/superpowers-dev/skills/dispatching-parallel-agents/SKILL.md",
+        "source": "plugin:superpowers-dev",
+        "type": "file",
+        "wordCount": 872,
+        "byteSize": null,
+        "descriptionSnippet": "Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies."
+      },
+      {
+        "name": "backend-patterns",
+        "path": "/Users/admin/.claude/plugins/marketplaces/everything-claude-code/skills/backend-patterns/SKILL.md",
+        "source": "plugin:everything-claude-code",
+        "type": "file",
+        "wordCount": 1595,
+        "byteSize": null,
+        "descriptionSnippet": "Backend architecture patterns, API design, database optimization, and server-side best practices for Node.js, Express, and Next.js API routes."
+      }
+    ]
+  },
+  "allProjects": [
+    {
+      "path": "/Users/admin/.claude/CLAUDE.md",
+      "projectDir": "/Users/admin/.claude",
+      "projectName": "global-config",
+      "wordCount": 563,
+      "byteSize": 6875
+    },
+    {
+      "path": "/Users/admin/openclaw/CLAUDE.md",
+      "projectDir": "/Users/admin/openclaw",
+      "projectName": "openclaw",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/Cursor/progresshub-correct/CLAUDE.md",
+      "projectDir": "/Users/admin/Cursor/progresshub-correct",
+      "projectName": "progresshub-correct",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/Cursor/openclawfortest/CLAUDE.md",
+      "projectDir": "/Users/admin/Cursor/openclawfortest",
+      "projectName": "openclawfortest",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/openclawfortest/CLAUDE.md",
+      "projectDir": "/Users/admin/openclawfortest",
+      "projectName": "openclawfortest",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/Documents/Comfy/comfy-pilot/CLAUDE.md",
+      "projectDir": "/Users/admin/Documents/Comfy/comfy-pilot",
+      "projectName": "comfy-pilot",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/Documents/ProjectCircle/CLAUDE.md",
+      "projectDir": "/Users/admin/Documents/ProjectCircle",
+      "projectName": "ProjectCircle",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/Documents/Claude 手機運行方案/claude-code-remote/CLAUDE.md",
+      "projectDir": "/Users/admin/Documents/Claude 手機運行方案/claude-code-remote",
+      "projectName": "claude-code-remote",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/Documents/DC 戰鬥設計評估/CLAUDE.md",
+      "projectDir": "/Users/admin/Documents/DC 戰鬥設計評估",
+      "projectName": "DC 戰鬥設計評估",
+      "wordCount": null,
+      "byteSize": null
+    },
+    {
+      "path": "/Users/admin/Downloads/遊戲專案/projectdk/projectdk/CLAUDE.md",
+      "projectDir": "/Users/admin/Downloads/遊戲專案/projectdk/projectdk",
+      "projectName": "projectdk",
+      "wordCount": null,
+      "byteSize": null
+    }
+  ],
+  "tokenBudget": {
+    "_note": "此區塊由使用者手動填寫",
+    "autoLoadedTotal": null,
+    "breakdown": {
+      "globalConfig": null,
+      "docs": null,
+      "skills": null,
+      "projectClaude": null,
+      "conversationHistory": null
+    },
+    "warningThreshold": 40000,
+    "lastManualUpdate": null
+  }
+}
